@@ -1,0 +1,113 @@
+# Python in AI — AI House Price Predictor
+# Shriyansh Labs
+# Note: Uses synthetic teaching data, not real UK house prices.
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error
+
+
+# 1. Create the house dataset
+data = {
+    "size": [50, 75, 100, 120, 150, 180,
+             200, 230, 260, 300, 330, 350],
+
+    "bedrooms": [1, 2, 3, 3, 4, 4,
+                 4, 5, 5, 5, 6, 6],
+
+    "location": ["rural", "rural", "suburban",
+                 "city", "suburban", "rural",
+                 "city", "suburban", "city",
+                 "rural", "suburban", "city"],
+
+    "price": [95000, 140000, 210000, 250000,
+              280000, 300000, 370000, 410000,
+              460000, 440000, 510000, 580000]
+}
+
+df = pd.DataFrame(data)
+
+print("HOUSE DATA")
+print(df.to_string(index=False))
+
+
+# 2. Prepare the data
+X = pd.get_dummies(
+    df[["size", "bedrooms", "location"]],
+    columns=["location"],
+    dtype=int
+)
+
+y = df["price"]
+
+
+# 3. Split into training and testing data
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.25,
+    random_state=42
+)
+
+
+# 4. Create and train the AI model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+
+# 5. Test the model
+predictions = model.predict(X_test)
+
+mae = mean_absolute_error(y_test, predictions)
+
+print("\nMODEL EVALUATION")
+print(f"Mean prediction error: £{mae:,.0f}")
+
+
+# 6. Predict the price of a new house
+house = pd.DataFrame([{
+    "size": 370,
+    "bedrooms": 5,
+    "location": "rural"
+}])
+
+# Encode the location and match the training columns
+house = pd.get_dummies(
+    house,
+    columns=["location"],
+    dtype=int
+).reindex(columns=X.columns, fill_value=0)
+
+price = model.predict(house)[0]
+
+print("\nNEW HOUSE")
+print("Size: 370 m²")
+print("Bedrooms: 5")
+print("Location: Rural")
+print(f"Estimated house price: £{price:,.0f}")
+print("Educational estimate only — synthetic data.")
+
+
+# 7. Create the graph
+plt.scatter(y_test, predictions, label="Test houses")
+
+plt.xlabel("Actual Price (£)")
+plt.ylabel("Predicted Price (£)")
+plt.title("AI House Price Predictor")
+
+plt.plot(
+    [0, 600000],
+    [0, 600000],
+    "--",
+    label="Perfect prediction"
+)
+
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+
+plt.savefig("house_price_predictions.png", dpi=150)
+plt.show()
